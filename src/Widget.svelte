@@ -25,7 +25,9 @@
 </div>
 
 <style>
+  /* the text scales with the widget's own size, so a large iframe shows large labels */
   .widget {
+    container-type: size;
     box-sizing: border-box;
     height: 100vh;
     padding: 8px 10px 8px;
@@ -41,12 +43,12 @@
     margin-bottom: 4px;
   }
   .title {
-    font-size: calc(12px * var(--scale));
+    font-size: calc(clamp(11px, 2.4cqw, 22px) * var(--scale));
     font-weight: 600;
     color: var(--muted);
   }
   .overall {
-    font-size: calc(17px * var(--scale));
+    font-size: calc(clamp(15px, 3.6cqw, 36px) * var(--scale));
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
@@ -72,7 +74,7 @@
   }
   .pct {
     margin-bottom: 3px;
-    font-size: calc(10px * var(--scale));
+    font-size: calc(clamp(9px, 2cqw, 20px) * var(--scale));
     font-weight: 600;
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
@@ -102,7 +104,8 @@
     bottom: 6px;
     transform: translateX(-50%) rotate(180deg);
     writing-mode: vertical-rl;
-    font-size: calc(11px * var(--scale));
+    /* the widest label fits the column, and the longest the height of the bar */
+    font-size: calc(clamp(10px, min(3.2cqw, 10cqh), 28px) * var(--scale));
     font-weight: 600;
     color: var(--text);
     text-shadow: 0 0 3px var(--page);
