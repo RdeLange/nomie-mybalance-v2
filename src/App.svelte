@@ -21,6 +21,8 @@
   let view = $state<'modal' | 'widget'>('modal');
 
   const selected = $derived(balance.config.categories);
+  // the areas the grid offers: the built-in categories, and the areas of any custom template that is on the wheel
+  const pickable = $derived([...CATEGORIES, ...balance.config.custom.filter((t) => t.areas.some((a) => selected.includes(a.id))).flatMap((t) => t.areas)]);
   const activeCustom = $derived(balance.config.custom.find((t) => t.areas.map((a) => a.id).join() === selected.join()));
   const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? activeCustom?.id ?? null);
   // the areas that have a score to show: a hand-set score, or at least one measure
@@ -235,7 +237,7 @@
       <button class="round" onclick={() => step(1)} disabled={selected.length >= MAX_CATEGORIES} aria-label="More areas">+</button>
     </div>
     <div class="grid">
-      {#each CATEGORIES as c (c.id)}
+      {#each pickable as c (c.id)}
         <button class="area" class:on={selected.includes(c.id)} onclick={() => toggle(c.id)} aria-pressed={selected.includes(c.id)}>
           <span class="swatch" style="background: {c.color}"></span>{c.label}
         </button>
@@ -317,7 +319,8 @@
   .legend strong { color: var(--text); }
   .dot, .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
   .swatch { width: 14px; height: 14px; border-radius: 4px; margin-right: 0; }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  /* the padding keeps the outline of the selected chip inside the scrolling row */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px; margin: -4px -4px 0; }
   .chip { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 10px 14px; border: 0; border-radius: 14px; background: var(--card); color: var(--text); text-align: left; cursor: pointer; }
   .chip-title { font-weight: 600; }
   .chip-sub { font-size: calc(12px * var(--scale)); color: var(--muted); }
