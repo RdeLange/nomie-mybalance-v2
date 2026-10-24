@@ -33,7 +33,8 @@
     padding: 8px 10px 8px;
     display: flex;
     flex-direction: column;
-    background: var(--page);
+    /* the widget card is the card colour of the app, not the page colour */
+    background: var(--card);
     color: var(--text);
   }
   .head {
