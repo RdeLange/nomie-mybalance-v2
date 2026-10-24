@@ -3,8 +3,11 @@
   import Wheel from './Wheel.svelte';
   import Widget from './Widget.svelte';
   import { balance, load, refresh, logBalance, setConfig, slicesOf, save } from './balance.svelte';
-  import { CATEGORIES, MAX_CATEGORIES, MIN_CATEGORIES, TEMPLATES, categoryById, type CategoryId } from './categories';
-  import { applyTemplate, toggleCategory, calculationsOf, addCalculation, updateCalculation, removeCalculation, modeOf, setMode, setManual, type Mode } from './config';
+  import { CATEGORIES, MAX_CATEGORIES, MIN_CATEGORIES, TEMPLATES, type CategoryId } from './categories';
+  import {
+    applyTemplate, applyCustom, toggleCategory, calculationsOf, addCalculation, updateCalculation, removeCalculation, modeOf, setMode, setManual,
+    areaOf, saveCustomTemplate, deleteCustomTemplate, blankTemplate, newArea, templateProblem, PRESET_COLOURS, type CustomTemplate, type Mode,
+  } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
   import { paletteFrom, type Palette } from './palette';
   import { onPrefsChange } from './prefs-live';
@@ -18,7 +21,8 @@
   let view = $state<'modal' | 'widget'>('modal');
 
   const selected = $derived(balance.config.categories);
-  const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? null);
+  const activeCustom = $derived(balance.config.custom.find((t) => t.areas.map((a) => a.id).join() === selected.join()));
+  const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? activeCustom?.id ?? null);
   // the areas that have a score to show: a hand-set score, or at least one measure
   const filled = $derived(selected.filter((id) => modeOf(balance.config, id) === 'manual' || calculationsOf(balance.config, id).length > 0).length);
   const slices = $derived(slicesOf());
@@ -32,6 +36,45 @@
   const pickTemplate = (id: string) => {
     const template = TEMPLATES.find((t) => t.id === id);
     if (template) setConfig(applyTemplate(balance.config, template));
+  };
+
+  // The template editor: a copy of the template being made or changed, saved only when it is valid
+  let draft = $state<CustomTemplate | null>(null);
+  let picking = $state<number | null>(null);
+  const draftProblem = $derived(draft ? templateProblem(draft) : null);
+  const draftIsSaved = $derived(!!draft && balance.config.custom.some((t) => t.id === draft!.id));
+  const pickCustom = (template: CustomTemplate) => {
+    draft = null;
+    setConfig(applyCustom(balance.config, $state.snapshot(template) as CustomTemplate));
+  };
+  const newTemplate = () => {
+    draft = blankTemplate();
+    picking = null;
+  };
+  const editTemplate = (template: CustomTemplate) => {
+    draft = structuredClone($state.snapshot(template)) as CustomTemplate;
+    picking = null;
+  };
+  const addDraftArea = () => {
+    if (!draft || draft.areas.length >= MAX_CATEGORIES) return;
+    draft.areas.push(newArea(draft.areas.length));
+  };
+  const removeDraftArea = (index: number) => {
+    if (!draft || draft.areas.length <= MIN_CATEGORIES) return;
+    draft.areas.splice(index, 1);
+    picking = null;
+  };
+  const saveDraft = () => {
+    if (!draft || draftProblem) return;
+    const next = saveCustomTemplate(balance.config, $state.snapshot(draft) as CustomTemplate);
+    draft = null;
+    setConfig(next);
+  };
+  const deleteDraft = () => {
+    if (!draft) return;
+    const next = deleteCustomTemplate(balance.config, draft.id);
+    draft = null;
+    setConfig(next);
   };
   const toggle = (id: CategoryId) => setConfig(toggleCategory(balance.config, id));
   const step = (delta: number) => {
@@ -140,7 +183,49 @@
         <span class="chip-sub">{t.categories.length} areas</span>
       </button>
     {/each}
+    {#each balance.config.custom as t (t.id)}
+      <button class="chip" class:on={activeTemplate === t.id} aria-pressed={activeTemplate === t.id} onclick={() => pickCustom(t)} aria-label="{t.name}: your own template">
+        <span class="chip-title">{t.name}</span>
+        <span class="chip-sub">{t.areas.length} areas · yours</span>
+      </button>
+    {/each}
+    <button class="chip new" onclick={newTemplate} aria-label="Make a new template">
+      <span class="chip-title">+ New</span>
+      <span class="chip-sub">Your own</span>
+    </button>
   </div>
+  {#if activeCustom}<button class="link" onclick={() => editTemplate(activeCustom)}>Edit "{activeCustom.name}"</button>{/if}
+
+  {#if draft}
+    <section class="panel draft">
+      <label class="field">
+        <span class="muted">Name</span>
+        <input class="input" bind:value={draft.name} placeholder="My template" />
+      </label>
+      <p class="muted field-label">Areas</p>
+      {#each draft.areas as area, i (area.id)}
+        <div class="draft-row">
+          <button class="swatch-btn" style="background: {area.color}" aria-label="Colour of {area.label}" aria-expanded={picking === i} onclick={() => (picking = picking === i ? null : i)}></button>
+          <input class="input" bind:value={area.label} aria-label="Area name" placeholder="Area name" />
+          <button class="small danger" onclick={() => removeDraftArea(i)} disabled={draft.areas.length <= MIN_CATEGORIES}>Remove</button>
+        </div>
+        {#if picking === i}
+          <div class="colours">
+            {#each PRESET_COLOURS as c (c)}
+              <button class="dot-btn" class:picked={area.color === c} style="background: {c}" aria-label="Use this colour" onclick={() => { area.color = c; picking = null; }}></button>
+            {/each}
+          </div>
+        {/if}
+      {/each}
+      <button class="ghost" onclick={addDraftArea} disabled={draft.areas.length >= MAX_CATEGORIES}>Add an area ({draft.areas.length} of {MAX_CATEGORIES})</button>
+      {#if draftProblem}<p class="problem">{draftProblem}</p>{/if}
+      <div class="actions">
+        <button class="ghost" onclick={() => (draft = null)}>Cancel</button>
+        <button class="primary" onclick={saveDraft} disabled={!!draftProblem}>Save and use</button>
+      </div>
+      {#if draftIsSaved}<button class="link danger" onclick={deleteDraft}>Delete template</button>{/if}
+    </section>
+  {/if}
 
   <h2>Areas on the wheel</h2>
   <section class="panel">
@@ -161,10 +246,10 @@
   <h2>Measure</h2>
   <section class="panel list">
     {#each selected as id (id)}
-      {@const cat = categoryById(id)!}
+      {@const area = areaOf(balance.config, id)!}
       <button class="row" onclick={() => (balance.measuring = balance.measuring === id ? null : id)}>
-        <span class="swatch" style="background: {cat.color}"></span>
-        <span class="row-title">{cat.label}</span>
+        <span class="swatch" style="background: {area.color}"></span>
+        <span class="row-title">{area.label}</span>
         <span class="muted">{#if modeOf(balance.config, id) === 'manual'}{Math.round(manualOf(id) * 10)}/10 by hand{:else}{calculationsOf(balance.config, id).length === 0 ? 'Add a measure' : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? 'measure' : 'measures'}`}{/if}</span>
       </button>
       {#if balance.measuring === id}
@@ -270,5 +355,17 @@
   .problem { margin: 6px 0 0; font-size: calc(13px * var(--scale)); color: #D70015; }
   .reading { margin: 6px 0 0; }
   .chip.on { background: var(--tint-soft); outline: 2px solid var(--tint); }
+  .chip.new { background: var(--fill); }
+  .draft { margin-top: 10px; }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .field-label { margin: 6px 0; font-size: calc(13px * var(--scale)); }
+  .draft-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .draft-row .input { flex: 1; min-width: 0; }
+  .swatch-btn { flex-shrink: 0; width: 32px; height: 32px; border: 2px solid var(--card); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+  .colours { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 10px; padding: 10px; border-radius: 12px; background: var(--fill); }
+  .dot-btn { width: 28px; height: 28px; border: 0; border-radius: 50%; cursor: pointer; }
+  .dot-btn.picked { outline: 2px solid var(--text); outline-offset: 2px; }
+  .actions { display: flex; gap: 8px; }
+  .actions .ghost, .actions .primary { margin-top: 8px; }
   .notice { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--tint-soft); color: var(--tint); font-size: calc(14px * var(--scale)); }
 </style>

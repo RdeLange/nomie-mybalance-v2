@@ -1,5 +1,7 @@
-// The eight categories of the wheel. Each keeps its colour from My Balance v1, so the wheel looks the same.
-export type CategoryId = 'breathe' | 'hydrate' | 'sleep' | 'eat' | 'move' | 'connect' | 'learn' | 'reflect';
+// The id of an area: one of the eight built-in categories, or an id made for an area of a custom template
+export type CategoryId = string;
+
+// The eight built-in categories. Each keeps its colour from My Balance v1, so the wheel looks the same.
 
 export type Category = { id: CategoryId; label: string; color: string };
 

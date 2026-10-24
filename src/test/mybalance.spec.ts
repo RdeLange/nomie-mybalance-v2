@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORIES, MAX_CATEGORIES, MIN_CATEGORIES, TEMPLATES } from '../categories';
 import { categoryScore, scoreOf, statisticOf, problemsIn, type Calculation } from '../scoring';
-import { normalise, toggleCategory, addCalculation, updateCalculation, removeCalculation, applyTemplate, DEFAULT_CONFIG, modeOf, setMode, setManual } from '../config';
+import {
+  normalise, toggleCategory, addCalculation, updateCalculation, removeCalculation, applyTemplate, DEFAULT_CONFIG, modeOf, setMode, setManual,
+  areaOf, saveCustomTemplate, deleteCustomTemplate, templateProblem, blankTemplate, newArea, type CustomTemplate,
+} from '../config';
 import { sectorAngles, sectorPath, scoreRadius, RADIUS, HUB, CENTRE } from '../geometry';
 import { valueOf, scoresFor, overall, type BalanceApi } from '../compute';
 
@@ -127,6 +130,62 @@ describe('set by hand or calculated', () => {
     const api: BalanceApi = { trackerValues: async () => [10], noteCount: async () => 0 };
     const scores = await scoresFor({ ...withMeasures, categories: ['move'] as any }, api);
     expect(scores[0].score).toBe(0.4);
+  });
+});
+
+describe('your own templates', () => {
+  const work: CustomTemplate = {
+    id: 't-work',
+    name: 'Work',
+    areas: [
+      { id: 'w1', label: 'Focus', color: '#007AFF' },
+      { id: 'w2', label: 'Rest', color: '#34C759' },
+      { id: 'w3', label: 'Team', color: '#FF9500' },
+      { id: 'w4', label: 'Health', color: '#FF2D55' },
+    ],
+  };
+
+  it('saving a template puts its own named and coloured areas on the wheel', () => {
+    const config = saveCustomTemplate(DEFAULT_CONFIG, work);
+    expect(config.categories).toEqual(['w1', 'w2', 'w3', 'w4']);
+    expect(areaOf(config, 'w1')).toEqual({ id: 'w1', label: 'Focus', color: '#007AFF' });
+    expect(config.custom).toHaveLength(1);
+  });
+
+  it('changing a saved template keeps one copy of it', () => {
+    const once = saveCustomTemplate(DEFAULT_CONFIG, work);
+    const renamed = saveCustomTemplate(once, { ...work, name: 'Office' });
+    expect(renamed.custom).toHaveLength(1);
+    expect(renamed.custom[0].name).toBe('Office');
+  });
+
+  it('a template needs a name, and between 4 and 8 areas that each have a name', () => {
+    expect(templateProblem({ ...work, name: '  ' })).toBeTruthy();
+    expect(templateProblem({ ...work, areas: work.areas.slice(0, 3) })).toBeTruthy();
+    expect(templateProblem({ ...work, areas: [...work.areas, ...[1, 2, 3, 4, 5].map((i) => newArea(i))] })).toBeTruthy();
+    expect(templateProblem({ ...work, areas: [...work.areas, ...[1, 2, 3, 4].map((i) => newArea(i))] })).toBeNull();
+    expect(templateProblem({ ...work, areas: [{ ...work.areas[0], label: ' ' }, ...work.areas.slice(1)] })).toBeTruthy();
+    expect(templateProblem(work)).toBeNull();
+    expect(templateProblem(blankTemplate())).toBe('Give the template a name.');
+  });
+
+  it('deleting the template on the wheel goes back to the full wheel and forgets its measures', () => {
+    let config = saveCustomTemplate(DEFAULT_CONFIG, work);
+    config = setManual(config, 'w2', 0.5);
+    const removed = deleteCustomTemplate(config, work.id);
+    expect(removed.custom).toEqual([]);
+    expect(removed.categories).toEqual(TEMPLATES[0].categories);
+    expect(removed.manual.w2).toBeUndefined();
+  });
+
+  it('reads a saved setup with a well formed template, and drops one that is not', () => {
+    const saved = {
+      categories: ['w1', 'w2', 'w3', 'w4', 'sleep'],
+      custom: [work, { id: 'bad', name: 'Too small', areas: [{ id: 'x', label: 'One', color: '#000' }] }],
+    };
+    const config = normalise(saved as any);
+    expect(config.custom.map((t) => t.id)).toEqual(['t-work']);
+    expect(config.categories).toEqual(['w1', 'w2', 'w3', 'w4', 'sleep']);
   });
 });
 

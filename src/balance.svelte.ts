@@ -1,7 +1,7 @@
 // The state of the balance: the setup, the scores, and the actions. The screens only show them.
-import { normalise, DEFAULT_CONFIG, type Config } from './config';
-import { scoresFor, overall, labelOf, type BalanceApi } from './compute';
-import { CATEGORIES, type CategoryId } from './categories';
+import { normalise, DEFAULT_CONFIG, areaOf, type Config } from './config';
+import { scoresFor, overall, type BalanceApi } from './compute';
+import { type CategoryId } from './categories';
 
 const STORAGE_KEY = 'balance';
 
@@ -29,10 +29,11 @@ const apiFor = (plugin: any): BalanceApi => ({
   },
 });
 
+// The areas on the wheel with their name and colour, in order
 export const slicesOf = () =>
-  balance.scores.map((s) => {
-    const cat = CATEGORIES.find((c) => c.id === s.id)!;
-    return { id: s.id, label: cat.label, color: cat.color, score: s.score };
+  balance.scores.flatMap((s) => {
+    const area = areaOf(balance.config, s.id);
+    return area ? [{ id: s.id, label: area.label, color: area.color, score: s.score }] : [];
   });
 
 export const load = async (plugin: any) => {
@@ -63,7 +64,7 @@ export const refresh = async () => {
 // Writes the balance into the timeline, so it shows with the rest of the day
 export const logBalance = () => {
   if (!balance.plugin) return;
-  const parts = balance.scores.map((s) => `${labelOf(s.id)} ${Math.round(s.score * 10)}/10`).join(', ');
+  const parts = slicesOf().map((s) => `${s.label} ${Math.round(s.score * 10)}/10`).join(', ');
   balance.plugin.createNote({ note: `Balance ${balance.overall.toFixed(1)}/10 · ${parts} #balance`, score: balance.overall });
   balance.message = 'Logged to your timeline.';
 };

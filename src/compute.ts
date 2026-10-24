@@ -1,7 +1,7 @@
 // Reads the value of each calculation from Nomie, and works out the score of each category.
 import { categoryScore, statisticOf, type Calculation } from './scoring';
 import { calculationsOf, modeOf, type Config } from './config';
-import { CATEGORIES, type CategoryId } from './categories';
+import { type CategoryId } from './categories';
 
 export type BalanceApi = {
   // the daily values of a tracker over the days (a tracker, "#tag" or "@person")
@@ -39,5 +39,3 @@ export const scoresFor = async (config: Config, api: BalanceApi): Promise<Array<
 // The balance as one number from 0 to 10, the average of the categories
 export const overall = (scores: Array<{ score: number }>): number =>
   scores.length ? Math.round((scores.reduce((a, s) => a + s.score, 0) / scores.length) * 100) / 10 : 0;
-
-export const labelOf = (id: CategoryId): string => CATEGORIES.find((c) => c.id === id)?.label ?? id;
