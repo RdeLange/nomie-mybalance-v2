@@ -4,7 +4,7 @@
   const slices = $derived(slicesOf());
 </script>
 
-<!-- The widget as My Balance v1 drew it: one coloured bar per area, rising from the bottom. The bars have a soft gradient, rounded tops, and the score on top. -->
+<!-- The widget as My Balance v1 drew it: one tall coloured bar per area, rising from the bottom. The label runs up the bar, and the score sits above it. -->
 <div class="widget">
   <header class="head">
     <span class="title">⚖️ Balance</span>
@@ -17,8 +17,8 @@
         <span class="pct">{Math.round(s.score * 100)}%</span>
         <div class="track">
           <div class="bar" style="height: {Math.max(s.score * 100, 3)}%; background: linear-gradient(to top, {s.color}, {s.color}99);"></div>
+          <span class="label">{s.label}</span>
         </div>
-        <span class="label">{s.label}</span>
       </div>
     {/each}
   </div>
@@ -28,7 +28,7 @@
   .widget {
     box-sizing: border-box;
     height: 100vh;
-    padding: 12px 12px 10px;
+    padding: 8px 10px 8px;
     display: flex;
     flex-direction: column;
     background: var(--page);
@@ -38,21 +38,21 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
   .title {
-    font-size: calc(13px * var(--scale));
+    font-size: calc(12px * var(--scale));
     font-weight: 600;
     color: var(--muted);
   }
   .overall {
-    font-size: calc(20px * var(--scale));
+    font-size: calc(17px * var(--scale));
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   .overall small {
     margin-left: 2px;
-    font-size: calc(12px * var(--scale));
+    font-size: calc(11px * var(--scale));
     font-weight: 500;
     color: var(--muted);
   }
@@ -65,14 +65,16 @@
   .col {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
   .pct {
-    margin-bottom: 4px;
-    font-size: calc(11px * var(--scale));
+    margin-bottom: 3px;
+    font-size: calc(10px * var(--scale));
     font-weight: 600;
+    line-height: 1.2;
     font-variant-numeric: tabular-nums;
     color: var(--muted);
   }
@@ -95,13 +97,15 @@
     transition: height 0.4s ease-in-out;
   }
   .label {
-    margin-top: 6px;
-    height: 58px;
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%) rotate(180deg);
     writing-mode: vertical-rl;
-    transform: rotate(180deg);
     font-size: calc(11px * var(--scale));
     font-weight: 600;
     color: var(--text);
+    text-shadow: 0 0 3px var(--page);
     white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
