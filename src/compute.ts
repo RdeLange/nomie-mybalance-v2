@@ -1,6 +1,6 @@
 // Reads the value of each calculation from Nomie, and works out the score of each category.
 import { categoryScore, statisticOf, type Calculation } from './scoring';
-import { calculationsOf, type Config } from './config';
+import { calculationsOf, modeOf, type Config } from './config';
 import { CATEGORIES, type CategoryId } from './categories';
 
 export type BalanceApi = {
@@ -20,10 +20,14 @@ export const valueOf = async (calc: Calculation, api: BalanceApi): Promise<numbe
   return statisticOf(await api.trackerValues(calc.source, calc.days), calc.statistic, calc.days);
 };
 
-// The score of every category on the wheel, from 0 to 1, in the order of the config
+// The score of every category on the wheel, from 0 to 1, in the order of the config. A manual category uses the score set by hand.
 export const scoresFor = async (config: Config, api: BalanceApi): Promise<Array<{ id: CategoryId; score: number }>> => {
   const out: Array<{ id: CategoryId; score: number }> = [];
   for (const id of config.categories) {
+    if (modeOf(config, id) === 'manual') {
+      out.push({ id, score: config.manual[id] ?? 0 });
+      continue;
+    }
     const calcs = calculationsOf(config, id);
     const values: number[] = [];
     for (const calc of calcs) values.push(await valueOf(calc, api));

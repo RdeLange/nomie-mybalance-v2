@@ -4,7 +4,7 @@
   import Widget from './Widget.svelte';
   import { balance, load, refresh, logBalance, setConfig, slicesOf, save } from './balance.svelte';
   import { CATEGORIES, MAX_CATEGORIES, MIN_CATEGORIES, TEMPLATES, categoryById, type CategoryId } from './categories';
-  import { applyTemplate, toggleCategory, calculationsOf, addCalculation, updateCalculation, removeCalculation } from './config';
+  import { applyTemplate, toggleCategory, calculationsOf, addCalculation, updateCalculation, removeCalculation, modeOf, setMode, setManual, type Mode } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
   import { paletteFrom, type Palette } from './palette';
   import { onPrefsChange } from './prefs-live';
@@ -19,7 +19,8 @@
 
   const selected = $derived(balance.config.categories);
   const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? null);
-  const measureCount = $derived(selected.reduce((n, id) => n + calculationsOf(balance.config, id).length, 0));
+  // the areas that have a score to show: a hand-set score, or at least one measure
+  const filled = $derived(selected.filter((id) => modeOf(balance.config, id) === 'manual' || calculationsOf(balance.config, id).length > 0).length);
   const slices = $derived(slicesOf());
 
   const applyNomieValues = () => {
@@ -63,6 +64,11 @@
     balance.config = removeCalculation(balance.config, balance.measuring, index);
     save();
   };
+  const MODES: Array<[Mode, string]> = [['manual', 'Set by hand'], ['calculated', 'Calculated']];
+  const chooseMode = (id: CategoryId, mode: Mode) => setConfig(setMode(balance.config, id, mode));
+  const manualOf = (id: CategoryId) => balance.config.manual[id] ?? 0;
+  // one step is a tenth of the scale, so the score reads 0 to 10
+  const stepManual = (id: CategoryId, delta: number) => setConfig(setManual(balance.config, id, manualOf(id) + delta / 10));
   const pickTracker = async (index: number) => {
     const picked = await plugin.selectTrackables('tracker', false);
     const tag = picked?.[0]?.tracker?.tag;
@@ -121,8 +127,8 @@
         <li><span class="dot" style="background: {s.color}"></span>{s.label} <strong>{Math.round(s.score * 10)}</strong></li>
       {/each}
     </ul>
-    <button class="primary" onclick={logBalance} disabled={!balance.scores.length || measureCount === 0}>Log to timeline</button>
-    {#if measureCount === 0}<p class="muted">Add a measure to an area below to see your balance.</p>{/if}
+    <button class="primary" onclick={logBalance} disabled={!balance.scores.length || filled === 0}>Log to timeline</button>
+    {#if filled === 0}<p class="muted">Set a score or add a measure to an area below to see your balance.</p>{/if}
     {#if balance.message}<p class="notice">{balance.message}</p>{/if}
   </section>
 
@@ -159,10 +165,22 @@
       <button class="row" onclick={() => (balance.measuring = balance.measuring === id ? null : id)}>
         <span class="swatch" style="background: {cat.color}"></span>
         <span class="row-title">{cat.label}</span>
-        <span class="muted">{calculationsOf(balance.config, id).length === 0 ? 'Add a measure' : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? 'measure' : 'measures'}`}</span>
+        <span class="muted">{#if modeOf(balance.config, id) === 'manual'}{Math.round(manualOf(id) * 10)}/10 by hand{:else}{calculationsOf(balance.config, id).length === 0 ? 'Add a measure' : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? 'measure' : 'measures'}`}{/if}</span>
       </button>
       {#if balance.measuring === id}
         <div class="editor">
+          <div class="chips small-chips">
+            {#each MODES as [mode, label] (mode)}
+              <button class="chip-s" class:on={modeOf(balance.config, id) === mode} aria-pressed={modeOf(balance.config, id) === mode} onclick={() => chooseMode(id, mode)}>{label}</button>
+            {/each}
+          </div>
+          {#if modeOf(balance.config, id) === 'manual'}
+            <div class="counter">
+              <button class="round" onclick={() => stepManual(id, -1)} disabled={manualOf(id) <= 0} aria-label="Lower score">−</button>
+              <span class="count">{Math.round(manualOf(id) * 10)} <span class="muted">of 10</span></span>
+              <button class="round" onclick={() => stepManual(id, 1)} disabled={manualOf(id) >= 1} aria-label="Higher score">+</button>
+            </div>
+          {:else}
           {#if calcs.length === 0}
             <p class="muted">No measure yet. A measure reads a tracker or a word from your notes, and turns it into a score.</p>
           {/if}
@@ -192,6 +210,7 @@
             </div>
           {/each}
           <button class="ghost" onclick={addCalc}>Add a measure</button>
+          {/if}
         </div>
       {/if}
     {/each}
