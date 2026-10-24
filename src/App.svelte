@@ -21,8 +21,8 @@
   let view = $state<'modal' | 'widget'>('modal');
 
   const selected = $derived(balance.config.categories);
-  // the areas the grid offers: the built-in categories, and the areas of any custom template that is on the wheel
-  const pickable = $derived([...CATEGORIES, ...balance.config.custom.filter((t) => t.areas.some((a) => selected.includes(a.id))).flatMap((t) => t.areas)]);
+  // the areas the grid offers: the areas of any custom template that is on the wheel come first, then the built-in categories
+  const pickable = $derived([...balance.config.custom.filter((t) => t.areas.some((a) => selected.includes(a.id))).flatMap((t) => t.areas), ...CATEGORIES]);
   const activeCustom = $derived(balance.config.custom.find((t) => t.areas.map((a) => a.id).join() === selected.join()));
   const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? activeCustom?.id ?? null);
   // the areas that have a score to show: a hand-set score, or at least one measure
