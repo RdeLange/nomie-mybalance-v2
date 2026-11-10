@@ -49,6 +49,7 @@
     color: var(--muted);
   }
   .overall {
+    font-family: var(--ios-font-rounded);
     font-size: calc(clamp(15px, 3.6cqw, 36px) * var(--scale));
     font-weight: 700;
     font-variant-numeric: tabular-nums;

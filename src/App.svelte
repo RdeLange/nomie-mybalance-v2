@@ -9,7 +9,7 @@
     areaOf, saveCustomTemplate, deleteCustomTemplate, blankTemplate, newArea, templateProblem, PRESET_COLOURS, type CustomTemplate, type Mode,
   } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
-  import { paletteFrom, type Palette } from './palette';
+  import { paletteFrom, glassFrom, type Palette, type Glass, dangerTextFrom } from './palette';
   import { onPrefsChange } from './prefs-live';
 
   const DAYS: TimeRange[] = [7, 30, 60, 90];
@@ -17,6 +17,8 @@
 
   let plugin: any;
   let palette = $state<Palette>(paletteFrom(undefined));
+  let dangerText = $state(dangerTextFrom(undefined));
+  let glass = $state<Glass>(glassFrom(undefined));
   let scale = $state(1);
   let view = $state<'modal' | 'widget'>('modal');
 
@@ -32,6 +34,8 @@
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
     palette = paletteFrom(plugin.prefs);
+    dangerText = dangerTextFrom(plugin.prefs);
+    glass = glassFrom(plugin.prefs);
     scale = plugin.prefs.fontScale || 1;
   };
 
@@ -154,7 +158,7 @@
   });
 </script>
 
-<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --scale: {scale};">
+<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {dangerText}; --on-danger: {palette.onDanger}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
 {#if view === 'widget'}
   <Widget />
 {:else}
@@ -309,7 +313,11 @@
 <style>
   .root { min-height: 100vh; background: var(--page); }
   .page { box-sizing: border-box; min-height: 100vh; padding: 16px; background: var(--page); color: var(--text); font-size: calc(16px * var(--scale)); line-height: 1.4; }
-  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  /* the plugin page fills the frame, so the glass bar sits at the top edge */
+  /* the app's text: its iOS font stack (main.css --ios-font), with the app's smoothing */
+  :global(body) { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; -webkit-font-smoothing: antialiased; --ios-font-rounded: ui-rounded, -apple-system, system-ui, sans-serif; }
+  /* the header is a Liquid Glass bar (D-glass): it stays at the top and the balance cards scroll under it */
+  .top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; margin: -16px -16px 8px; padding: 16px 16px 10px; background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-edge); }
   h1 { margin: 0; font-size: calc(28px * var(--scale)); font-weight: 700; }
   h2 { margin: 20px 0 8px; font-size: calc(13px * var(--scale)); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
   .muted { color: var(--muted); }
@@ -328,8 +336,11 @@
   .list { padding: 4px 14px; }
   .counter { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px; }
   .count { font-size: calc(22px * var(--scale)); font-weight: 700; }
-  .round { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--fill); color: var(--text); font-size: calc(20px * var(--scale)); cursor: pointer; }
+  /* round buttons are Liquid Glass (D-glass): the glass fill, a thin edge, and the blur */
+  .round { width: 40px; height: 40px; border: 1px solid var(--glass-edge); border-radius: 50%; background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); color: var(--text); font-size: calc(20px * var(--scale)); cursor: pointer; }
   .round:disabled { opacity: 0.35; }
+  /* glass never sits on glass: the refresh button in the glass header is a solid fill */
+  .top .round { border: 0; background: var(--fill); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .area { display: flex; align-items: center; gap: 8px; padding: 10px; border: 0; border-radius: 12px; background: var(--fill); color: var(--text); font: inherit; cursor: pointer; }
   .area.on { background: var(--tint-soft); color: var(--tint); font-weight: 600; }
@@ -354,8 +365,8 @@
   .primary:disabled { opacity: 0.4; }
   .ghost { background: var(--fill); color: var(--text); }
   .link { border: 0; background: transparent; font: inherit; padding: 6px 0; cursor: pointer; color: var(--tint); }
-  .danger { color: #D70015; }
-  .problem { margin: 6px 0 0; font-size: calc(13px * var(--scale)); color: #D70015; }
+  .danger { color: var(--danger); }
+  .problem { margin: 6px 0 0; font-size: calc(13px * var(--scale)); color: var(--danger); }
   .reading { margin: 6px 0 0; }
   .chip.on { background: var(--tint-soft); outline: 2px solid var(--tint); }
   .chip.new { background: var(--fill); }
