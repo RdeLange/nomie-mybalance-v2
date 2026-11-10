@@ -333,7 +333,8 @@
   .list { padding: 4px 14px; }
   .counter { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 12px; }
   .count { font-size: calc(22px * var(--scale)); font-weight: 700; }
-  .round { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--fill); color: var(--text); font-size: calc(20px * var(--scale)); cursor: pointer; }
+  /* round buttons are Liquid Glass (D-glass): the glass fill, a thin edge, and the blur */
+  .round { width: 40px; height: 40px; border: 1px solid var(--glass-edge); border-radius: 50%; background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); color: var(--text); font-size: calc(20px * var(--scale)); cursor: pointer; }
   .round:disabled { opacity: 0.35; }
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .area { display: flex; align-items: center; gap: 8px; padding: 10px; border: 0; border-radius: 12px; background: var(--fill); color: var(--text); font: inherit; cursor: pointer; }
