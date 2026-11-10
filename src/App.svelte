@@ -9,7 +9,7 @@
     areaOf, saveCustomTemplate, deleteCustomTemplate, blankTemplate, newArea, templateProblem, PRESET_COLOURS, type CustomTemplate, type Mode,
   } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
-  import { paletteFrom, type Palette } from './palette';
+  import { paletteFrom, glassFrom, type Palette, type Glass } from './palette';
   import { onPrefsChange } from './prefs-live';
 
   const DAYS: TimeRange[] = [7, 30, 60, 90];
@@ -17,6 +17,7 @@
 
   let plugin: any;
   let palette = $state<Palette>(paletteFrom(undefined));
+  let glass = $state<Glass>(glassFrom(undefined));
   let scale = $state(1);
   let view = $state<'modal' | 'widget'>('modal');
 
@@ -32,6 +33,7 @@
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
     palette = paletteFrom(plugin.prefs);
+    glass = glassFrom(plugin.prefs);
     scale = plugin.prefs.fontScale || 1;
   };
 
@@ -154,7 +156,7 @@
   });
 </script>
 
-<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --scale: {scale};">
+<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {palette.danger}; --on-danger: {palette.onDanger}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
 {#if view === 'widget'}
   <Widget />
 {:else}
@@ -354,8 +356,8 @@
   .primary:disabled { opacity: 0.4; }
   .ghost { background: var(--fill); color: var(--text); }
   .link { border: 0; background: transparent; font: inherit; padding: 6px 0; cursor: pointer; color: var(--tint); }
-  .danger { color: #D70015; }
-  .problem { margin: 6px 0 0; font-size: calc(13px * var(--scale)); color: #D70015; }
+  .danger { color: var(--danger); }
+  .problem { margin: 6px 0 0; font-size: calc(13px * var(--scale)); color: var(--danger); }
   .reading { margin: 6px 0 0; }
   .chip.on { background: var(--tint-soft); outline: 2px solid var(--tint); }
   .chip.new { background: var(--fill); }
