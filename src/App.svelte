@@ -336,6 +336,8 @@
   /* round buttons are Liquid Glass (D-glass): the glass fill, a thin edge, and the blur */
   .round { width: 40px; height: 40px; border: 1px solid var(--glass-edge); border-radius: 50%; background: var(--glass-fill); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); color: var(--text); font-size: calc(20px * var(--scale)); cursor: pointer; }
   .round:disabled { opacity: 0.35; }
+  /* glass never sits on glass: the refresh button in the glass header is a solid fill */
+  .top .round { border: 0; background: var(--fill); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .area { display: flex; align-items: center; gap: 8px; padding: 10px; border: 0; border-radius: 12px; background: var(--fill); color: var(--text); font: inherit; cursor: pointer; }
   .area.on { background: var(--tint-soft); color: var(--tint); font-weight: 600; }
