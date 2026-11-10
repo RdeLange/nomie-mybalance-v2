@@ -9,7 +9,7 @@
     areaOf, saveCustomTemplate, deleteCustomTemplate, blankTemplate, newArea, templateProblem, PRESET_COLOURS, type CustomTemplate, type Mode,
   } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
-  import { paletteFrom, glassFrom, type Palette, type Glass } from './palette';
+  import { paletteFrom, glassFrom, type Palette, type Glass, dangerTextFrom } from './palette';
   import { onPrefsChange } from './prefs-live';
 
   const DAYS: TimeRange[] = [7, 30, 60, 90];
@@ -17,6 +17,7 @@
 
   let plugin: any;
   let palette = $state<Palette>(paletteFrom(undefined));
+  let dangerText = $state(dangerTextFrom(undefined));
   let glass = $state<Glass>(glassFrom(undefined));
   let scale = $state(1);
   let view = $state<'modal' | 'widget'>('modal');
@@ -33,6 +34,7 @@
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
     palette = paletteFrom(plugin.prefs);
+    dangerText = dangerTextFrom(plugin.prefs);
     glass = glassFrom(plugin.prefs);
     scale = plugin.prefs.fontScale || 1;
   };
@@ -156,7 +158,7 @@
   });
 </script>
 
-<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {palette.danger}; --on-danger: {palette.onDanger}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
+<div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {dangerText}; --on-danger: {palette.onDanger}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
 {#if view === 'widget'}
   <Widget />
 {:else}
