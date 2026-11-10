@@ -11,9 +11,10 @@
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
   import { paletteFrom, glassFrom, type Palette, type Glass, dangerTextFrom } from './palette';
   import { onPrefsChange } from './prefs-live';
+  import { t as tr, setLanguage } from './i18n/index.svelte';
 
   const DAYS: TimeRange[] = [7, 30, 60, 90];
-  const STATISTICS: Array<[Statistic, string]> = [['average', 'Average'], ['sum', 'Sum']];
+  const statisticOptions = (): Array<[Statistic, string]> => [['average', tr('average')], ['sum', tr('sum')]];
 
   let plugin: any;
   let palette = $state<Palette>(paletteFrom(undefined));
@@ -34,6 +35,7 @@
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
     palette = paletteFrom(plugin.prefs);
+    setLanguage(plugin.prefs?.language);
     dangerText = dangerTextFrom(plugin.prefs);
     glass = glassFrom(plugin.prefs);
     scale = plugin.prefs.fontScale || 1;
@@ -113,7 +115,7 @@
     balance.config = removeCalculation(balance.config, balance.measuring, index);
     save();
   };
-  const MODES: Array<[Mode, string]> = [['manual', 'Set by hand'], ['calculated', 'Calculated']];
+  const modeOptions = (): Array<[Mode, string]> => [['manual', tr('setByHand')], ['calculated', tr('calculated')]];
   const chooseMode = (id: CategoryId, mode: Mode) => setConfig(setMode(balance.config, id, mode));
   const manualOf = (id: CategoryId) => balance.config.manual[id] ?? 0;
   // one step is a tenth of the scale, so the score reads 0 to 10
@@ -126,7 +128,7 @@
   // The source must be a tracker, a person or a note word, or "none"
   const sourceProblem = (source: string): string | null => {
     if (source === 'none' || source.startsWith('#') || source.startsWith('@') || source.startsWith('|')) return null;
-    return 'Start with # for a tracker, @ for a person, or | for a word in your notes.';
+    return tr('sourceHint');
   };
 
   onMount(() => {
@@ -164,81 +166,81 @@
 {:else}
 <div class="page">
   <header class="top">
-    <h1>Balance</h1>
-    <button class="round" aria-label="Refresh" onclick={refresh} disabled={balance.busy}>↻</button>
+    <h1>{tr('title')}</h1>
+    <button class="round" aria-label={tr('refresh')} onclick={refresh} disabled={balance.busy}>↻</button>
   </header>
 
   <section class="hero">
     <Wheel slices={slices} overall={balance.overall} />
-    {#if balance.busy}<p class="muted reading">Reading your Nomie data…</p>{/if}
+    {#if balance.busy}<p class="muted reading">{tr('reading')}</p>{/if}
     <ul class="legend">
       {#each slices as s (s.id)}
         <li><span class="dot" style="background: {s.color}"></span>{s.label} <strong>{Math.round(s.score * 10)}</strong></li>
       {/each}
     </ul>
-    <button class="primary" onclick={logBalance} disabled={!balance.scores.length || filled === 0}>Log to timeline</button>
-    {#if filled === 0}<p class="muted">Set a score or add a measure to an area below to see your balance.</p>{/if}
+    <button class="primary" onclick={logBalance} disabled={!balance.scores.length || filled === 0}>{tr('logToTimeline')}</button>
+    {#if filled === 0}<p class="muted">{tr('setScore')}</p>{/if}
     {#if balance.message}<p class="notice">{balance.message}</p>{/if}
   </section>
 
-  <h2>Template</h2>
+  <h2>{tr('template')}</h2>
   <div class="chips">
     {#each TEMPLATES as t (t.id)}
       <button class="chip" class:on={activeTemplate === t.id} aria-pressed={activeTemplate === t.id} onclick={() => pickTemplate(t.id)} aria-label="{t.name}: {t.description}">
         <span class="chip-title">{t.name}</span>
-        <span class="chip-sub">{t.categories.length} areas</span>
+        <span class="chip-sub">{tr('areasN', { n: t.categories.length })}</span>
       </button>
     {/each}
     {#each balance.config.custom as t (t.id)}
-      <button class="chip" class:on={activeTemplate === t.id} aria-pressed={activeTemplate === t.id} onclick={() => pickCustom(t)} aria-label="{t.name}: your own template">
+      <button class="chip" class:on={activeTemplate === t.id} aria-pressed={activeTemplate === t.id} onclick={() => pickCustom(t)} aria-label="{t.name}: {tr('ownTemplate')}">
         <span class="chip-title">{t.name}</span>
-        <span class="chip-sub">{t.areas.length} areas · yours</span>
+        <span class="chip-sub">{tr('areasYours', { n: t.areas.length })}</span>
       </button>
     {/each}
-    <button class="chip new" onclick={newTemplate} aria-label="Make a new template">
-      <span class="chip-title">+ New</span>
-      <span class="chip-sub">Your own</span>
+    <button class="chip new" onclick={newTemplate} aria-label={tr('makeNew')}>
+      <span class="chip-title">{tr('newChip')}</span>
+      <span class="chip-sub">{tr('yourOwnSub')}</span>
     </button>
   </div>
-  {#if activeCustom}<button class="link" onclick={() => editTemplate(activeCustom)}>Edit "{activeCustom.name}"</button>{/if}
+  {#if activeCustom}<button class="link" onclick={() => editTemplate(activeCustom)}>{tr('editTemplate', { name: activeCustom.name })}</button>{/if}
 
   {#if draft}
     <section class="panel draft">
       <label class="field">
-        <span class="muted">Name</span>
-        <input class="input" bind:value={draft.name} placeholder="My template" />
+        <span class="muted">{tr('name')}</span>
+        <input class="input" bind:value={draft.name} placeholder={tr('namePlaceholder')} />
       </label>
-      <p class="muted field-label">Areas</p>
+      <p class="muted field-label">{tr('areasHead')}</p>
       {#each draft.areas as area, i (area.id)}
         <div class="draft-row">
-          <button class="swatch-btn" style="background: {area.color}" aria-label="Colour of {area.label}" aria-expanded={picking === i} onclick={() => (picking = picking === i ? null : i)}></button>
-          <input class="input" bind:value={area.label} aria-label="Area name" placeholder="Area name" />
-          <button class="small danger" onclick={() => removeDraftArea(i)} disabled={draft.areas.length <= MIN_CATEGORIES}>Remove</button>
+          <button class="swatch-btn" style="background: {area.color}" aria-label={tr('colourOf', { label: area.label })} aria-expanded={picking === i} onclick={() => (picking = picking === i ? null : i)}></button>
+          <input class="input" bind:value={area.label} aria-label={tr('areaName')} placeholder={tr('areaName')} />
+          <button class="small danger" onclick={() => removeDraftArea(i)} disabled={draft.areas.length <= MIN_CATEGORIES}>{tr('remove')}</button>
         </div>
         {#if picking === i}
           <div class="colours">
             {#each PRESET_COLOURS as c (c)}
-              <button class="dot-btn" class:picked={area.color === c} style="background: {c}" aria-label="Use this colour" onclick={() => { area.color = c; picking = null; }}></button>
+              <button class="dot-btn" class:picked={area.color === c} style="background: {c}" aria-label={tr('useColour')} onclick={() => { area.color = c; picking = null; }}></button>
             {/each}
           </div>
         {/if}
       {/each}
-      <button class="ghost" onclick={addDraftArea} disabled={draft.areas.length >= MAX_CATEGORIES}>Add an area ({draft.areas.length} of {MAX_CATEGORIES})</button>
+      <button class="ghost" onclick={addDraftArea} disabled={draft.areas.length >= MAX_CATEGORIES}>{tr('addArea', { n: draft.areas.length, max: MAX_CATEGORIES })}</button>
       {#if draftProblem}<p class="problem">{draftProblem}</p>{/if}
       <div class="actions">
-        <button class="ghost" onclick={() => (draft = null)}>Cancel</button>
-        <button class="primary" onclick={saveDraft} disabled={!!draftProblem}>Save and use</button>
+        <button class="ghost" onclick={() => (draft = null)}>{tr('cancel')}</button>
+        <button class="primary" onclick={saveDraft} disabled={!!draftProblem}>{tr('saveUse')}</button>
       </div>
-      {#if draftIsSaved}<button class="link danger" onclick={deleteDraft}>Delete template</button>{/if}
+      {#if draftIsSaved}<button class="link danger" onclick={deleteDraft}>{tr('deleteTemplate')}</button>{/if}
     </section>
   {/if}
 
-  <h2>Areas on the wheel</h2>
+  <h2>{tr('areasOnWheel')}</h2>
   <section class="panel">
     <div class="counter">
-      <button class="round" onclick={() => step(-1)} disabled={selected.length <= MIN_CATEGORIES} aria-label="Fewer areas">−</button>
-      <span class="count">{selected.length} <span class="muted">of {MAX_CATEGORIES}</span></span>
-      <button class="round" onclick={() => step(1)} disabled={selected.length >= MAX_CATEGORIES} aria-label="More areas">+</button>
+      <button class="round" onclick={() => step(-1)} disabled={selected.length <= MIN_CATEGORIES} aria-label={tr('fewerAreas')}>−</button>
+      <span class="count">{selected.length} <span class="muted">{tr('ofMax', { max: MAX_CATEGORIES })}</span></span>
+      <button class="round" onclick={() => step(1)} disabled={selected.length >= MAX_CATEGORIES} aria-label={tr('moreAreas')}>+</button>
     </div>
     <div class="grid">
       {#each pickable as c (c.id)}
@@ -249,58 +251,58 @@
     </div>
   </section>
 
-  <h2>Measure</h2>
+  <h2>{tr('measure')}</h2>
   <section class="panel list">
     {#each selected as id (id)}
       {@const area = areaOf(balance.config, id)!}
       <button class="row" onclick={() => (balance.measuring = balance.measuring === id ? null : id)}>
         <span class="swatch" style="background: {area.color}"></span>
         <span class="row-title">{area.label}</span>
-        <span class="muted">{#if modeOf(balance.config, id) === 'manual'}{Math.round(manualOf(id) * 10)}/10 by hand{:else}{calculationsOf(balance.config, id).length === 0 ? 'Add a measure' : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? 'measure' : 'measures'}`}{/if}</span>
+        <span class="muted">{#if modeOf(balance.config, id) === 'manual'}{tr('byHand', { n: Math.round(manualOf(id) * 10) })}{:else}{calculationsOf(balance.config, id).length === 0 ? tr('addMeasure') : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? tr('measureWord1') : tr('measureWordMany')}`}{/if}</span>
       </button>
       {#if balance.measuring === id}
         <div class="editor">
           <div class="chips small-chips">
-            {#each MODES as [mode, label] (mode)}
+            {#each modeOptions() as [mode, label] (mode)}
               <button class="chip-s" class:on={modeOf(balance.config, id) === mode} aria-pressed={modeOf(balance.config, id) === mode} onclick={() => chooseMode(id, mode)}>{label}</button>
             {/each}
           </div>
           {#if modeOf(balance.config, id) === 'manual'}
             <div class="counter">
-              <button class="round" onclick={() => stepManual(id, -1)} disabled={manualOf(id) <= 0} aria-label="Lower score">−</button>
-              <span class="count">{Math.round(manualOf(id) * 10)} <span class="muted">of 10</span></span>
-              <button class="round" onclick={() => stepManual(id, 1)} disabled={manualOf(id) >= 1} aria-label="Higher score">+</button>
+              <button class="round" onclick={() => stepManual(id, -1)} disabled={manualOf(id) <= 0} aria-label={tr('lowerScore')}>−</button>
+              <span class="count">{Math.round(manualOf(id) * 10)} <span class="muted">{tr('ofTenShort')}</span></span>
+              <button class="round" onclick={() => stepManual(id, 1)} disabled={manualOf(id) >= 1} aria-label={tr('higherScore')}>+</button>
             </div>
           {:else}
           {#if calcs.length === 0}
-            <p class="muted">No measure yet. A measure reads a tracker or a word from your notes, and turns it into a score.</p>
+            <p class="muted">{tr('noMeasure')}</p>
           {/if}
           {#each calcs as calc, i (i)}
             {@const problem = sourceProblem(calc.source) ?? problemsIn(calc)[0] ?? null}
             <div class="calc">
               <div class="calc-head">
-                <input class="input" value={calc.source} placeholder="#tracker, @person, or |word" onchange={(e) => editCalc(i, { source: e.currentTarget.value.trim() || 'none' })} />
-                <button class="small" onclick={() => pickTracker(i)}>Pick</button>
+                <input class="input" value={calc.source} placeholder={tr('measureSource')} onchange={(e) => editCalc(i, { source: e.currentTarget.value.trim() || 'none' })} />
+                <button class="small" onclick={() => pickTracker(i)}>{tr('pick')}</button>
               </div>
               {#if problem}<p class="problem">{problem}</p>{/if}
               <div class="chips small-chips">
-                {#each STATISTICS as [id2, label] (id2)}
+                {#each statisticOptions() as [id2, label] (id2)}
                   <button class="chip-s" class:on={calc.statistic === id2} onclick={() => editCalc(i, { statistic: id2 })}>{label}</button>
                 {/each}
                 {#each DAYS as d (d)}
-                  <button class="chip-s" class:on={calc.days === d} onclick={() => editCalc(i, { days: d })}>{d} d</button>
+                  <button class="chip-s" class:on={calc.days === d} onclick={() => editCalc(i, { days: d })}>{tr('days', { d })}</button>
                 {/each}
               </div>
               <div class="range">
-                <label>Min <input class="num" inputmode="decimal" value={calc.min} onchange={(e) => editCalc(i, { min: Number(e.currentTarget.value) })} /></label>
-                <label>Max <input class="num" inputmode="decimal" value={calc.max} onchange={(e) => editCalc(i, { max: Number(e.currentTarget.value) })} /></label>
-                <label>Weight <input class="num" inputmode="decimal" value={calc.weight} onchange={(e) => editCalc(i, { weight: Number(e.currentTarget.value) })} /></label>
-                <label class="rev"><input type="checkbox" checked={calc.reverse} onchange={(e) => editCalc(i, { reverse: e.currentTarget.checked })} /> Reverse</label>
+                <label>{tr('min')} <input class="num" inputmode="decimal" value={calc.min} onchange={(e) => editCalc(i, { min: Number(e.currentTarget.value) })} /></label>
+                <label>{tr('max')} <input class="num" inputmode="decimal" value={calc.max} onchange={(e) => editCalc(i, { max: Number(e.currentTarget.value) })} /></label>
+                <label>{tr('weight')} <input class="num" inputmode="decimal" value={calc.weight} onchange={(e) => editCalc(i, { weight: Number(e.currentTarget.value) })} /></label>
+                <label class="rev"><input type="checkbox" checked={calc.reverse} onchange={(e) => editCalc(i, { reverse: e.currentTarget.checked })} /> {tr('reverse')}</label>
               </div>
-              <button class="link danger" onclick={() => removeCalc(i)}>Remove</button>
+              <button class="link danger" onclick={() => removeCalc(i)}>{tr('remove')}</button>
             </div>
           {/each}
-          <button class="ghost" onclick={addCalc}>Add a measure</button>
+          <button class="ghost" onclick={addCalc}>{tr('addMeasure')}</button>
           {/if}
         </div>
       {/if}

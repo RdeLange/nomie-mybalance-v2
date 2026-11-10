@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n/index.svelte';
   import { balance, slicesOf } from './balance.svelte';
 
   const slices = $derived(slicesOf());
@@ -7,11 +8,11 @@
 <!-- The widget as My Balance v1 drew it: one tall coloured bar per area, rising from the bottom. The label runs up the bar, and the score sits above it. -->
 <div class="widget">
   <header class="head">
-    <span class="title">⚖️ Balance</span>
-    <strong class="overall">{balance.overall.toFixed(1)}<small>/ 10</small></strong>
+    <span class="title">⚖️ {t('widgetTitle')}</span>
+    <strong class="overall">{balance.overall.toFixed(1)}<small>{t('slashTen')}</small></strong>
   </header>
 
-  <div class="bars" role="img" aria-label="Balance per area, overall {balance.overall.toFixed(1)} out of 10">
+  <div class="bars" role="img" aria-label={t('widgetLabel', { score: balance.overall.toFixed(1) })}>
     {#each slices as s (s.id)}
       <div class="col">
         <span class="pct">{Math.round(s.score * 100)}%</span>

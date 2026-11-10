@@ -1,3 +1,4 @@
+import { t } from './i18n/index.svelte';
 // The state of the balance: the setup, the scores, and the actions. The screens only show them.
 import { normalise, DEFAULT_CONFIG, areaOf, type Config } from './config';
 import { scoresFor, overall, type BalanceApi } from './compute';
@@ -55,7 +56,7 @@ export const refresh = async () => {
     balance.overall = overall(balance.scores);
     balance.message = '';
   } catch {
-    balance.message = 'The balance could not be read from Nomie. Try again in a moment.';
+    balance.message = t('readFail');
   } finally {
     balance.busy = false;
   }
@@ -65,8 +66,8 @@ export const refresh = async () => {
 export const logBalance = () => {
   if (!balance.plugin) return;
   const parts = slicesOf().map((s) => `${s.label} ${Math.round(s.score * 10)}/10`).join(', ');
-  balance.plugin.createNote({ note: `Balance ${balance.overall.toFixed(1)}/10 · ${parts} #balance`, score: balance.overall });
-  balance.message = 'Logged to your timeline.';
+  balance.plugin.createNote({ note: `${t('noteWord')} ${balance.overall.toFixed(1)}/10 · ${parts} #balance`, score: balance.overall });
+  balance.message = t('logged');
 };
 
 export const setConfig = async (config: Config) => {

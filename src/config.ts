@@ -1,3 +1,4 @@
+import { t } from './i18n/index.svelte';
 // The balance setup: which areas the wheel shows (4 to 8), what each one measures, and the templates the user made.
 import { CATEGORIES, MAX_CATEGORIES, MIN_CATEGORIES, TEMPLATES, type CategoryId, type Template } from './categories';
 import { DEFAULT_CALCULATION, type Calculation } from './scoring';
@@ -44,7 +45,7 @@ const readCustom = (saved: unknown): CustomTemplate[] => {
     if (typeof t?.id !== 'string' || typeof t?.name !== 'string' || !Array.isArray(t.areas)) return [];
     const areas = t.areas.filter(isArea).map((a: Area) => ({ id: a.id, label: a.label.trim(), color: a.color }));
     if (areas.length < MIN_CATEGORIES) return [];
-    return [{ id: t.id, name: t.name.trim() || 'Template', areas: areas.slice(0, MAX_CATEGORIES) }];
+    return [{ id: t.id, name: t.name.trim() || t('templateDefault'), areas: areas.slice(0, MAX_CATEGORIES) }];
   });
 };
 
@@ -108,16 +109,16 @@ let made = 0;
 // A new id. Ids are kept as they are saved, so they only have to be unique in one setup.
 export const newId = (prefix: string): string => `${prefix}${Date.now().toString(36)}${(made++).toString(36)}`;
 
-export const newArea = (index: number): Area => ({ id: newId('a'), label: `Area ${index + 1}`, color: PRESET_COLOURS[index % PRESET_COLOURS.length] });
+export const newArea = (index: number): Area => ({ id: newId('a'), label: t('areaN', { n: index + 1 }), color: PRESET_COLOURS[index % PRESET_COLOURS.length] });
 
 // A new template, with four areas to name and colour
 export const blankTemplate = (): CustomTemplate => ({ id: newId('t'), name: '', areas: [0, 1, 2, 3].map((i) => newArea(i)) });
 
 // The first thing wrong with a custom template, or null when it can be saved
 export const templateProblem = (template: CustomTemplate): string | null => {
-  if (!template.name.trim()) return 'Give the template a name.';
+  if (!template.name.trim()) return t('giveTemplateName');
   if (template.areas.length < MIN_CATEGORIES || template.areas.length > MAX_CATEGORIES) return `A template has between ${MIN_CATEGORIES} and ${MAX_CATEGORIES} areas.`;
-  if (template.areas.some((a) => !a.label.trim())) return 'Every area needs a name.';
+  if (template.areas.some((a) => !a.label.trim())) return t('everyAreaName');
   return null;
 };
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n/index.svelte';
   import { CENTRE, HUB, RADIUS, SIZE, labelPosition, scoreRadius, sectorAngles, sectorPath } from './geometry';
 
   type Slice = { id: string; label: string; color: string; score: number };
@@ -13,7 +14,7 @@
   };
 </script>
 
-<svg viewBox="0 0 {SIZE} {SIZE}" class="wheel" class:compact role="img" aria-label="Wheel of balance, overall {overall} out of 10">
+<svg viewBox="0 0 {SIZE} {SIZE}" class="wheel" class:compact role="img" aria-label={t('wheelLabel', { score: overall })}>
   <defs>
     {#each slices as s (s.id)}
       <radialGradient id="grad-{s.id}" cx="50%" cy="50%" r="50%">
@@ -37,7 +38,7 @@
 
   <circle cx={CENTRE} cy={CENTRE} r={HUB} class="hub" />
   <text x={CENTRE} y={CENTRE + 2} text-anchor="middle" class="overall">{overall.toFixed(1)}</text>
-  <text x={CENTRE} y={CENTRE + 18} text-anchor="middle" class="overall-sub">of 10</text>
+  <text x={CENTRE} y={CENTRE + 18} text-anchor="middle" class="overall-sub">{t('ofTenShort')}</text>
 
   {#if !compact}
     {#each slices as s, i (s.id)}

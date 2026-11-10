@@ -1,3 +1,4 @@
+import { t } from './i18n/index.svelte';
 // How a calculation becomes a score, as plain rules. The rules are the ones My Balance v1 used.
 export type Statistic = 'average' | 'sum';
 export type TimeRange = 7 | 30 | 60 | 90;
@@ -48,7 +49,7 @@ export const categoryScore = (calcs: Calculation[], values: number[]): number =>
 // Checks a calculation as the editor saves it. Returns the problems, or none.
 export const problemsIn = (calc: Calculation): string[] => {
   const problems: string[] = [];
-  if (!(calc.max > calc.min)) problems.push('The maximum must be more than the minimum.');
-  if (!(calc.weight >= 0)) problems.push('The weight cannot be negative.');
+  if (!(calc.max > calc.min)) problems.push(t('maxMoreMin'));
+  if (!(calc.weight >= 0)) problems.push(t('weightNeg'));
   return problems;
 };
