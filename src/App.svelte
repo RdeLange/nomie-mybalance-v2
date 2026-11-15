@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { startSnapshots } from './snapshot';
   import { onMount } from 'svelte';
   import Wheel from './Wheel.svelte';
   import Widget from './Widget.svelte';
@@ -142,6 +143,7 @@
       addToMoreMenu: true,
       addToWidgets: true,
     });
+    startSnapshots(plugin);
     onPrefsChange(plugin, () => applyNomieValues());
     plugin.onRegistered(async () => {
       applyNomieValues();
