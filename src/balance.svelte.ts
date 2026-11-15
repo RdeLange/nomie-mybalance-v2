@@ -41,6 +41,9 @@ export const load = async (plugin: any) => {
   balance.plugin = plugin;
   await plugin.storage.init();
   balance.config = normalise(plugin.storage.getItem(STORAGE_KEY));
+  // Nomie's widget settings read the widgets this plugin offers from 'widgets' (id, name and emoji).
+  // My Balance has one widget, so the list has one entry.
+  await plugin.storage.setItem('widgets', [{ widgetid: 'balance', name: 'My Balance', emoji: '⚖️' }]);
   balance.ready = true;
   await refresh();
 };
