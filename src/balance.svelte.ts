@@ -1,3 +1,4 @@
+import { displayColour } from './palette'
 import { t } from './i18n/index.svelte';
 // The state of the balance: the setup, the scores, and the actions. The screens only show them.
 import { normalise, DEFAULT_CONFIG, areaOf, type Config } from './config';
@@ -34,7 +35,7 @@ const apiFor = (plugin: any): BalanceApi => ({
 export const slicesOf = () =>
   balance.scores.flatMap((s) => {
     const area = areaOf(balance.config, s.id);
-    return area ? [{ id: s.id, label: area.label, color: area.color, score: s.score }] : [];
+    return area ? [{ id: s.id, label: area.label, color: displayColour(area.color), score: s.score }] : [];
   });
 
 export const load = async (plugin: any) => {

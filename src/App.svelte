@@ -10,7 +10,7 @@
     areaOf, saveCustomTemplate, deleteCustomTemplate, blankTemplate, newArea, templateProblem, PRESET_COLOURS, type CustomTemplate, type Mode,
   } from './config';
   import { DEFAULT_CALCULATION, problemsIn, type Calculation, type Statistic, type TimeRange } from './scoring';
-  import { paletteFrom, glassFrom, type Palette, type Glass, dangerTextFrom } from './palette';
+  import { paletteFrom, glassFrom, type Palette, type Glass, dangerTextFrom, setColourPrefs, displayColour } from './palette';
   import { onPrefsChange } from './prefs-live';
   import { t as tr, setLanguage } from './i18n/index.svelte';
 
@@ -31,10 +31,15 @@
   const activeTemplate = $derived(TEMPLATES.find((t) => t.categories.join() === selected.join())?.id ?? activeCustom?.id ?? null);
   // the areas that have a score to show: a hand-set score, or at least one measure
   const filled = $derived(selected.filter((id) => modeOf(balance.config, id) === 'manual' || calculationsOf(balance.config, id).length > 0).length);
-  const slices = $derived(slicesOf());
+  // the slices follow the palette, so a change of the warm palette redraws the wheel
+  const slices = $derived.by(() => {
+    void palette;
+    return slicesOf();
+  });
 
   const applyNomieValues = () => {
     if (!plugin?.prefs) return;
+    setColourPrefs(plugin.prefs);
     palette = paletteFrom(plugin.prefs);
     setLanguage(plugin.prefs?.language);
     dangerText = dangerTextFrom(plugin.prefs);
@@ -164,7 +169,7 @@
 
 <div class="root" style="--page: {palette.page}; --card: {palette.card}; --text: {palette.text}; --muted: {palette.textSecondary}; --line: {palette.separator}; --fill: {palette.fill}; --tint: {palette.tint}; --on-tint: {palette.onTint}; --tint-soft: {palette.tintSoft}; --danger: {dangerText}; --on-danger: {palette.onDanger}; --glass-fill: {glass.fill}; --glass-edge: {glass.edge}; --glass-blur: {glass.blur}; --glass-shadow: {glass.shadow}; --scale: {scale};">
 {#if view === 'widget'}
-  <Widget />
+  <Widget {palette} />
 {:else}
 <div class="page">
   <header class="top">
@@ -215,7 +220,7 @@
       <p class="muted field-label">{tr('areasHead')}</p>
       {#each draft.areas as area, i (area.id)}
         <div class="draft-row">
-          <button class="swatch-btn" style="background: {area.color}" aria-label={tr('colourOf', { label: area.label })} aria-expanded={picking === i} onclick={() => (picking = picking === i ? null : i)}></button>
+          <button class="swatch-btn" style="background: {displayColour(area.color)}" aria-label={tr('colourOf', { label: area.label })} aria-expanded={picking === i} onclick={() => (picking = picking === i ? null : i)}></button>
           <input class="input" bind:value={area.label} aria-label={tr('areaName')} placeholder={tr('areaName')} />
           <button class="small danger" onclick={() => removeDraftArea(i)} disabled={draft.areas.length <= MIN_CATEGORIES}>{tr('remove')}</button>
         </div>
@@ -247,7 +252,7 @@
     <div class="grid">
       {#each pickable as c (c.id)}
         <button class="area" class:on={selected.includes(c.id)} onclick={() => toggle(c.id)} aria-pressed={selected.includes(c.id)}>
-          <span class="swatch" style="background: {c.color}"></span>{c.label}
+          <span class="swatch" style="background: {displayColour(c.color)}"></span>{c.label}
         </button>
       {/each}
     </div>
@@ -258,7 +263,7 @@
     {#each selected as id (id)}
       {@const area = areaOf(balance.config, id)!}
       <button class="row" onclick={() => (balance.measuring = balance.measuring === id ? null : id)}>
-        <span class="swatch" style="background: {area.color}"></span>
+        <span class="swatch" style="background: {displayColour(area.color)}"></span>
         <span class="row-title">{area.label}</span>
         <span class="muted">{#if modeOf(balance.config, id) === 'manual'}{tr('byHand', { n: Math.round(manualOf(id) * 10) })}{:else}{calculationsOf(balance.config, id).length === 0 ? tr('addMeasure') : `${calculationsOf(balance.config, id).length} ${calculationsOf(balance.config, id).length === 1 ? tr('measureWord1') : tr('measureWordMany')}`}{/if}</span>
       </button>

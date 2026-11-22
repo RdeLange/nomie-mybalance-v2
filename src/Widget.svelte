@@ -2,7 +2,12 @@
   import { t } from './i18n/index.svelte';
   import { balance, slicesOf } from './balance.svelte';
 
-  const slices = $derived(slicesOf());
+  // the widget takes the palette so the bars redraw when the warm palette changes
+  let { palette = undefined }: { palette?: unknown } = $props();
+  const slices = $derived.by(() => {
+    void palette;
+    return slicesOf();
+  });
 </script>
 
 <!-- The widget as My Balance v1 drew it: one tall coloured bar per area, rising from the bottom. The label runs up the bar, and the score sits above it. -->
